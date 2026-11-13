@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#e8edf2" />
-  <meta name="description" content="青测：一个从容、易读的 AI API 观测工作台。填写自己的地址与密钥，选择模型，检测速度与稳定性。" />
-  <title>青测 · AI API 测速与稳定性</title>
+  <meta name="description" content="狗厕：一个从容、易读的 AI API 观测工作台。填写自己的地址与密钥，选择模型，检测速度与稳定性。" />
+  <title>狗厕 · AI API 测速与稳定性</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="stylesheet" href="assets/styles.css" />
   <script src="assets/monitor.js" defer></script>
@@ -42,7 +42,7 @@
 
   <main class="app-shell">
     <nav class="nav-rail" aria-label="工作空间">
-      <a class="brand" href="./" aria-label="青测首页"><span class="brand-mark"><svg class="icon"><use href="#i-paw"/></svg></span><span class="brand-name">青测<span class="brand-caption">QINGCE LAB</span></span></a>
+      <a class="brand" href="./" aria-label="狗厕首页"><span class="brand-mark"><svg class="icon"><use href="#i-paw"/></svg></span><span class="brand-name">狗厕<span class="brand-caption">GOUCE LAB</span></span></a>
       <span class="rail-section-label">你的观测空间</span>
       <div class="rail-navigation">
         <button class="rail-button active" type="button" data-view="overview" aria-label="测速工作台" aria-pressed="true"><svg class="icon"><use href="#i-grid"/></svg><span>测速工作台</span><span class="nav-active-dot" aria-hidden="true"></span></button>
@@ -50,7 +50,7 @@
         <button class="rail-button" type="button" data-view="logs" aria-label="运行日志" aria-pressed="false"><svg class="icon"><use href="#i-terminal"/></svg><span>运行日志</span></button>
       </div>
       <div class="rail-bottom">
-        <div class="companion-card"><span class="companion-eyebrow">A QUIETER WORKSPACE</span><img class="companion-art" src="assets/forest-companions.svg" alt="并肩坐在草地上的猫咪与柴犬" width="420" height="300" /><p>认真观测，轻松一点。</p><span>我们陪你等每一次回应。</span></div>
+        <div class="companion-card"><span class="companion-eyebrow">ONE STEP AT A TIME</span><img class="companion-art" src="assets/forest-companions.svg" alt="并肩坐在草地上的猫咪与柴犬" width="420" height="300" /><p>慢慢来，也会很厉害。</p><span>今天的一小步，是明天的底气。</span></div>
         <button id="particleToggle" class="subtle-button particle-toggle" type="button" aria-pressed="true"><svg class="icon"><use href="#i-sparkles"/></svg><span>微光粒子</span><span class="mini-switch" aria-hidden="true"></span></button>
         <a class="source-link" href="https://github.com/fw-2D/api-speed-monitor" target="_blank" rel="noopener noreferrer"><svg class="icon"><use href="#i-github"/></svg><span>开源在 GitHub</span><svg class="icon source-arrow"><use href="#i-arrow"/></svg></a>
         <span class="rail-version"><span class="small-dot"></span>DAYLIGHT EDITION · 3.1</span>
@@ -58,9 +58,9 @@
     </nav>
 
     <div class="dashboard">
-      <header class="page-header"><div class="breadcrumb"><svg class="icon"><use href="#i-leaf"/></svg><span>青测实验室</span><span class="breadcrumb-divider">/</span><span id="currentViewLabel">测速工作台</span></div><div class="header-tools"><div id="globalStatus" class="statuspill" role="status"><span class="dot"></span><span>空闲</span></div><button id="demoToggle" class="subtle-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-wave"/></svg><span>示例预览</span></button></div></header>
+      <header class="page-header"><div class="breadcrumb"><svg class="icon"><use href="#i-leaf"/></svg><span>狗厕实验室</span><span class="breadcrumb-divider">/</span><span id="currentViewLabel">测速工作台</span></div><div class="header-tools"><div id="globalStatus" class="statuspill" role="status"><span class="dot"></span><span>空闲</span></div><button id="demoToggle" class="subtle-button" type="button" aria-pressed="false"><svg class="icon"><use href="#i-wave"/></svg><span>示例预览</span></button></div></header>
 
-      <div class="workspace-heading"><div class="workspace-title"><h1>把每次响应，看清楚<span class="title-period">。</span></h1><p>连接中转站，选择模型，从一次真实响应开始。</p></div><div class="run-actions"><button id="runOnce" class="button primary-button" type="button"><svg class="icon"><use href="#i-play"/></svg>立即测试</button><button id="start" class="button secondary-button" type="button"><svg class="icon"><use href="#i-refresh"/></svg>周期监控</button><button id="stop" class="button stop-button" type="button" disabled><svg class="icon"><use href="#i-stop"/></svg>停止</button></div></div>
+      <div class="workspace-heading"><div class="workspace-title"><h1>心有所向，步履不停<span class="title-period">。</span></h1><p>不必急着抵达，每一步都算数。</p></div><div class="run-actions"><button id="runOnce" class="button primary-button" type="button"><svg class="icon"><use href="#i-play"/></svg>立即测试</button><button id="start" class="button secondary-button" type="button"><svg class="icon"><use href="#i-refresh"/></svg>周期监控</button><button id="stop" class="button stop-button" type="button" disabled><svg class="icon"><use href="#i-stop"/></svg>停止</button></div></div>
 
       <div class="setup-grid">
         <aside class="configuration surface-card" aria-labelledby="configurationTitle">
@@ -103,7 +103,7 @@
 
         <footer class="workspace-footer"><div class="progress-info"><span class="small-dot"></span><span id="runProgress">准备就绪</span><span id="nextRun"></span></div><div class="footer-note"><svg class="icon"><use href="#i-clock"/></svg>保持页面打开 · 测试会消耗 API 额度</div><div id="testProgress" class="progress-track" aria-hidden="true"><span></span></div><div id="outputPreview" class="output-preview" hidden></div></footer>
       </div>
-      <footer class="page-footer"><span><svg class="icon"><use href="#i-paw"/></svg>一点安静，一点确定。</span><span>你的连接，你的数据。<span class="footer-version">青测 3.1</span></span></footer>
+      <footer class="page-footer"><span><svg class="icon"><use href="#i-paw"/></svg>一点安静，一点确定。</span><span>你的连接，你的数据。<span class="footer-version">狗厕 3.1</span></span></footer>
     </div>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

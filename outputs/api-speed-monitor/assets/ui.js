@@ -96,7 +96,7 @@
     demoToggle.querySelector('span').textContent = active ? '退出示例' : '示例预览';
     demoBadge.hidden = !active;
     document.body.classList.toggle('demo-mode', active);
-    subtitle.textContent = active ? '正在展示模拟数据，不会请求 API 或消耗额度。' : '连接中转站，选择模型，从一次真实响应开始。';
+    subtitle.textContent = active ? '正在展示模拟数据，不会请求 API 或消耗额度。' : '不必急着抵达，每一步都算数。';
   }
 
   function updateParameterSummary() {

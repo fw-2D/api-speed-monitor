@@ -52,4 +52,4 @@ const server = createServer(async (incoming, outgoing) => {
   }
 });
 
-server.listen(port, '127.0.0.1', () => console.log(`青测预览：http://localhost:${port}`));
+server.listen(port, '127.0.0.1', () => console.log(`狗厕预览：http://localhost:${port}`));
