@@ -1,0 +1,8 @@
+work/
+outputs/*.csv
+outputs/**/*.zip
+.env
+.env.*
+.netlify/
+node_modules/
+

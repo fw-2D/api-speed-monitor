@@ -1,0 +1,28 @@
+[build]
+base = "outputs/api-speed-monitor"
+publish = "."
+functions = "netlify/functions"
+
+[build.environment]
+NODE_VERSION = "22"
+
+[[redirects]]
+from = "/api/relay"
+to = "/.netlify/functions/relay"
+status = 200
+force = true
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Content-Type-Options = "nosniff"
+X-Frame-Options = "SAMEORIGIN"
+Referrer-Policy = "no-referrer"
+Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https:; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+
+[[headers]]
+for = "/api/*"
+[headers.values]
+Cache-Control = "no-store"
+
