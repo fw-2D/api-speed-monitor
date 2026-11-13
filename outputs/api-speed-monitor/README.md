@@ -2,6 +2,8 @@
 
 一个静态网页加一个 Netlify 同源转发函数，用于监控 OpenAI 兼容中转站的模型响应速度和稳定性。界面采用浅绿磨砂风格，控制区在一页内完成，选项切换带过渡动效，背景有轻量粒子特效。页面支持浏览器直连和同源转发两种方式。
 
+在线网页：[https://qingce-api-monitor.netlify.app/](https://qingce-api-monitor.netlify.app/)。生产网页已设为公开，无需 Netlify 或 GitHub 登录。
+
 ## 功能
 
 - 支持任意 OpenAI 兼容 Base URL 和 API Key。

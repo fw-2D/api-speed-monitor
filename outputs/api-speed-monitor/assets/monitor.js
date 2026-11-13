@@ -359,7 +359,7 @@ async function fetchModels() {
   }
   if (!validateConnection()) return;
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), 15000);
+  const timer = window.setTimeout(() => controller.abort(), 45000);
   el.fetchModels.disabled = true;
   try {
     const response = await requestJson("models", null, controller.signal);
@@ -787,7 +787,7 @@ async function runModelChecks() {
   try {
     const listController = new AbortController();
     state.checksAbort = listController;
-    const listTimer = window.setTimeout(() => listController.abort(), 15000);
+    const listTimer = window.setTimeout(() => listController.abort(), 45000);
     try {
       const response = await requestJson("models", null, listController.signal);
       const body = await parseJsonResponse(response);
