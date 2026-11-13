@@ -98,6 +98,19 @@ function safeStorageSet(value) {
   }
 }
 
+function forgetSavedKey() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
+    if (saved?.config && Object.hasOwn(saved.config, "apiKey")) {
+      delete saved.config.apiKey;
+      saved.config.rememberKey = false;
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    }
+  } catch {
+    showToast("浏览器未允许修改本机存储，无法确认已移除保存的密钥");
+  }
+}
+
 function showToast(message) {
   if (!el.toast) return;
   el.toast.textContent = message;
@@ -1243,7 +1256,10 @@ function bindEvents() {
     });
   });
   el.apiKey.addEventListener("change", saveState);
-  el.rememberKey.addEventListener("change", saveState);
+  el.rememberKey.addEventListener("change", () => {
+    if (!el.rememberKey.checked) forgetSavedKey();
+    saveState();
+  });
   el.models.addEventListener("input", () => { renderModelChoices(); notifyState(); });
 
   const resizeObserver = new ResizeObserver(() => renderCharts(modelStats()));

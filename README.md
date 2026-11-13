@@ -20,6 +20,8 @@
 
 在 Netlify 选择 **Import an existing project → GitHub → fw-2D/api-speed-monitor**。仓库内的 `netlify.toml` 已指定发布目录和函数目录，无需构建命令。部署后的根网址即可分享给其他人，使用者不需要 GitHub 或 Netlify 账号。
 
+首次部署后，在项目概览点击 **Make public**，访问范围选择 **Public**；否则生产网页可能要求访问者先登录。本站的生产网址已设为公开，部署预览仍可保持团队私有。
+
 完整配置、指标口径和隐私说明见 [使用文档](outputs/api-speed-monitor/README.md)。
 
 默认使用 `/v1/responses`。网站转发会经过本网站服务器处理使用者填入的密钥，不持久保存密钥；浏览器直连则需要目标中转站允许跨域。周期监控需要保持网页打开，真实测试会消耗使用者自己的 API 额度。
