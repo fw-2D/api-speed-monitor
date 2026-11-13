@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300" fill="none" role="img" aria-label="A cream cat and a caramel Shiba Inu sitting together among quiet forest leaves">
+  <g class="forest-moon">
+    <circle cx="222" cy="117" r="77" fill="#f7f8f2" opacity="0.72"/>
+  </g>
+  <g class="forest-branches" stroke="#8fa68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M43 214C47 171 66 129 91 99M57 163L39 139M71 133L68 108M82 112L102 110"/>
+    <path d="M39 139C24 136 22 124 24 115C35 119 42 127 39 139Z" fill="#8fa68b"/>
+    <path d="M68 111C56 102 58 90 62 83C70 91 74 101 68 111Z" fill="#b7c5aa"/>
+    <path d="M81 113C81 99 91 90 100 88C100 100 94 110 81 113Z" fill="#8fa68b"/>
+    <path d="M55 167C65 152 77 151 87 154C78 166 67 170 55 167Z" fill="#b7c5aa"/>
+    <path d="M355 216C366 181 368 150 357 111M367 167L389 150M363 133L343 118"/>
+    <path d="M357 113C345 103 347 90 352 83C360 92 363 103 357 113Z" fill="#b7c5aa"/>
+    <path d="M343 119C330 120 322 112 320 103C332 102 341 108 343 119Z" fill="#8fa68b"/>
+    <path d="M388 151C384 138 390 128 398 123C400 136 397 146 388 151Z" fill="#8fa68b"/>
+    <path d="M367 182C353 178 347 166 349 157C361 161 368 170 367 182Z" fill="#b7c5aa"/>
+  </g>
+  <g class="forest-ground" stroke="#8fa68b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M67 264C104 275 290 278 346 263"/>
+    <path d="M83 261C61 259 48 245 46 228C66 228 85 238 83 261Z" fill="#b7c5aa"/>
+    <path d="M58 238L82 259"/>
+    <path d="M331 260C331 244 342 233 358 230C356 246 347 257 331 260Z" fill="#8fa68b"/>
+    <path d="M342 243L331 260"/>
+    <path d="M94 267L88 256M320 269L324 258M364 262L369 253M365 262L360 255"/>
+  </g>
+  <g class="companion-cat" stroke="#123c2f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path class="cat-tail" d="M115 244C95 248 77 242 75 226C73 211 82 201 80 188C79 180 69 180 68 188C68 196 59 213 63 229C68 250 89 260 116 257Z" fill="#f7f8f2"/>
+    <path class="cat-body" d="M127 172C111 190 109 214 109 244C103 247 101 254 107 259C113 264 129 264 144 262C158 265 178 263 183 257C187 252 182 247 176 245C176 214 173 189 159 174Z" fill="#f7f8f2"/>
+    <path d="M127 198C123 215 124 239 129 250M156 199C160 216 158 239 154 250" stroke="#8fa68b"/>
+    <path d="M126 253C130 249 139 249 143 253C147 249 156 249 160 253M143 254V261"/>
+    <path class="cat-head" d="M107 127L105 98Q105 92 110 96L132 113C144 109 155 110 165 114L187 97Q192 93 192 100L187 133C193 145 190 162 178 171C160 185 129 183 113 170C100 160 100 141 107 127Z" fill="#f7f8f2"/>
+    <path d="M114 108L116 125L128 119Z" fill="#d7ac7b" stroke="none"/>
+    <path d="M182 109L169 121L180 127Z" fill="#d7ac7b" stroke="none"/>
+    <path d="M144 114L141 125M153 115L152 123" stroke="#8fa68b" stroke-width="2"/>
+    <g class="cat-face" fill="#123c2f" stroke="none">
+      <ellipse cx="129" cy="145" rx="3" ry="3.8"/>
+      <ellipse cx="165" cy="145" rx="3" ry="3.8"/>
+      <path d="M143 153Q147 151 151 153Q150 157 147 158Q144 157 143 153Z"/>
+    </g>
+    <path d="M147 157V161M147 161Q141 167 137 161M147 161Q153 167 157 161" stroke-width="1.8"/>
+    <path d="M112 151L101 148M112 157L100 159M179 151L190 149M179 157L191 160" stroke="#8fa68b" stroke-width="1.8"/>
+  </g>
+  <g class="companion-shiba" stroke="#123c2f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path class="shiba-tail" d="M293 241C312 252 337 244 344 227C352 209 339 193 322 195C305 197 301 213 308 223C313 231 326 230 328 222C322 226 316 222 317 216C318 210 325 208 330 212C338 220 326 234 311 230L298 225Z" fill="#d7ac7b"/>
+    <path class="shiba-body" d="M242 175C225 188 217 209 218 235C208 241 202 252 209 258C217 264 236 264 249 261C265 265 296 265 306 258C311 253 305 247 299 245C298 216 287 188 270 178Z" fill="#d7ac7b"/>
+    <path class="shiba-chest" d="M246 184C235 192 233 205 238 217C240 223 244 228 247 234L244 254C252 259 268 258 275 253L273 231C281 214 275 193 264 186Z" fill="#f7f8f2" stroke="none"/>
+    <path d="M229 228C221 231 218 243 222 250M285 223C291 233 290 245 285 251" stroke="#a77748"/>
+    <path d="M248 223L246 250M269 223L273 250"/>
+    <path d="M238 255C242 250 253 250 258 255C261 250 273 250 278 255M258 255V263"/>
+    <path class="shiba-head" d="M216 130L219 100Q220 93 225 97L244 112C257 106 272 105 285 110L299 91Q303 86 305 93L313 128C322 145 319 166 305 177C287 192 254 193 232 181C211 170 207 148 216 130Z" fill="#d7ac7b"/>
+    <path d="M226 108L227 127L240 119Z" fill="#a77748" stroke="none"/>
+    <path d="M298 103L288 119L304 124Z" fill="#a77748" stroke="none"/>
+    <path d="M223 155C230 153 237 157 245 159C252 149 265 147 273 154C281 155 287 151 292 148C302 147 312 154 309 165C304 181 286 185 268 185C247 185 228 175 223 163Q221 158 223 155Z" fill="#f7f8f2" stroke="none"/>
+    <g class="shiba-face" fill="#123c2f" stroke="none">
+      <ellipse cx="240" cy="143" rx="3.2" ry="3.7" transform="rotate(-7 240 143)"/>
+      <ellipse cx="287" cy="140" rx="3.2" ry="3.7" transform="rotate(-7 287 140)"/>
+      <path d="M258 155Q263 152 269 154Q271 157 266 162Q261 162 258 158Z"/>
+    </g>
+    <path d="M265 161L266 166M266 166Q258 173 253 166M266 166Q273 172 280 163" stroke-width="1.8"/>
+    <path d="M232 133L241 131M281 128L290 129" stroke="#f7f8f2" stroke-width="4"/>
+  </g>
+  <g class="forest-front-grass" stroke="#8fa68b" stroke-width="2" stroke-linecap="round">
+    <path d="M189 268L186 258M190 268L195 261M78 272L73 267M338 274L343 269"/>
+  </g>
+</svg>

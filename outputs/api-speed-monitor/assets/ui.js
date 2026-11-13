@@ -36,6 +36,9 @@
       button.setAttribute('aria-pressed', String(selected));
     });
     panels.forEach(panel => { panel.hidden = panel.id !== `view-${view}`; });
+    document.getElementById('currentViewLabel').textContent = {
+      overview: '测速工作台', checks: '模型检测', logs: '运行日志'
+    }[view];
     alignIndicator();
     requestAnimationFrame(() => window.ApiMonitor?.render());
   }
@@ -53,14 +56,17 @@
       switchView(tabs[nextIndex].dataset.view, true);
     });
   });
-  railButtons.forEach(button => button.addEventListener('click', () => switchView(button.dataset.view)));
+  railButtons.forEach(button => button.addEventListener('click', () => {
+    switchView(button.dataset.view);
+    document.querySelector('.workspace').scrollIntoView({ behavior: motionPreference.matches ? 'instant' : 'smooth', block: 'start' });
+  }));
   new ResizeObserver(alignIndicator).observe(document.querySelector('.view-tabs'));
   alignIndicator();
 
   function updateConnectionHint() {
     connectionHint.textContent = transport.value === 'proxy'
-      ? '转发最长 60 秒。密钥经本网站服务器处理但不保存；较慢的模型可选择浏览器直连。'
-      : '浏览器直接连接你的中转站，密钥不经过本网站服务器。需要中转站允许浏览器跨域访问。';
+      ? '密钥经网站服务器转发但不保存，单次转发最长 60 秒。'
+      : '直接连接中转站，密钥不经本站；需要中转站允许浏览器跨域。';
   }
   transport.addEventListener('change', updateConnectionHint);
   updateConnectionHint();
@@ -90,8 +96,18 @@
     demoToggle.querySelector('span').textContent = active ? '退出示例' : '示例预览';
     demoBadge.hidden = !active;
     document.body.classList.toggle('demo-mode', active);
-    subtitle.textContent = active ? '正在展示模拟数据，不会请求 API 或消耗额度。' : '填入左侧配置，从一次真实响应开始。';
+    subtitle.textContent = active ? '正在展示模拟数据，不会请求 API 或消耗额度。' : '连接中转站，选择模型，从一次真实响应开始。';
   }
+
+  function updateParameterSummary() {
+    const interval = document.getElementById('interval').value;
+    const maxTokens = document.getElementById('maxTokens').value;
+    const effort = document.getElementById('effort').value;
+    document.getElementById('parameterSummary').textContent = `${interval} 分钟间隔 · ${maxTokens} tokens · ${effort || '默认推理强度'}`;
+  }
+  ['interval', 'maxTokens', 'effort'].forEach(id => document.getElementById(id).addEventListener('input', updateParameterSummary));
+  document.getElementById('fileInput').addEventListener('change', () => requestAnimationFrame(updateParameterSummary));
+  updateParameterSummary();
 
   demoToggle.addEventListener('click', () => {
     if (latestUpdate.running || latestUpdate.checksRunning) return;
@@ -136,6 +152,7 @@
   let particles = [];
   let particleWidth = 0;
   let particleHeight = 0;
+  let particleRailWidth = 0;
   let particleFrame = null;
   let lastPaint = 0;
   let particleEnabled = true;
@@ -149,21 +166,23 @@
     particlesCanvas.width = particleWidth * ratio;
     particlesCanvas.height = particleHeight * ratio;
     particleContext.setTransform(ratio, 0, 0, ratio, 0, 0);
-    const count = Math.min(45, Math.max(15, Math.round(particleWidth * particleHeight / 34000)));
+    const rail = document.querySelector('.nav-rail').getBoundingClientRect();
+    particleRailWidth = rail.width;
+    const count = window.innerWidth > 760 ? 12 : 0;
     particles = Array.from({ length: count }, () => ({
-      positionX: Math.random() * particleWidth,
+      positionX: 12 + Math.random() * Math.max(10, rail.width - 24),
       positionY: Math.random() * particleHeight,
-      radius: .7 + Math.random() * 1.7,
-      speedX: (Math.random() - .5) * .15,
-      speedY: -.08 - Math.random() * .17,
-      opacity: .13 + Math.random() * .18,
+      radius: .7 + Math.random() * 1.1,
+      speedX: (Math.random() - .5) * .1,
+      speedY: -.04 - Math.random() * .1,
+      opacity: .08 + Math.random() * .13,
       phase: Math.random() * Math.PI * 2
     }));
     particleContext.clearRect(0, 0, particleWidth, particleHeight);
   }
 
   function drawParticles(timestamp) {
-    if (!particleEnabled || motionPreference.matches || document.hidden) {
+    if (!particleEnabled || motionPreference.matches || document.hidden || !particles.length) {
       particleFrame = null;
       return;
     }
@@ -178,16 +197,16 @@
       const distanceX = particle.positionX - pointer.positionX;
       const distanceY = particle.positionY - pointer.positionY;
       const distance = Math.hypot(distanceX, distanceY);
-      if (distance > 0 && distance < 100) {
-        particle.positionX += distanceX / distance * .22;
-        particle.positionY += distanceY / distance * .22;
+      if (distance > 0 && distance < 70) {
+        particle.positionX += distanceX / distance * .15;
+        particle.positionY += distanceY / distance * .15;
       }
       if (particle.positionY < -5) particle.positionY = particleHeight + 5;
-      if (particle.positionX < -5) particle.positionX = particleWidth + 5;
-      if (particle.positionX > particleWidth + 5) particle.positionX = -5;
+      if (particle.positionX < 10) particle.positionX = particleRailWidth - 10;
+      if (particle.positionX > particleRailWidth - 10) particle.positionX = 10;
       particleContext.beginPath();
       particleContext.arc(particle.positionX, particle.positionY, particle.radius, 0, Math.PI * 2);
-      particleContext.fillStyle = `rgba(254, 255, 225, ${particle.opacity})`;
+      particleContext.fillStyle = `rgba(146, 103, 69, ${particle.opacity * (.65 + .35 * Math.sin(timestamp * .001 + particle.phase))})`;
       particleContext.fill();
     });
   }
@@ -199,7 +218,7 @@
     if (particleFrame) cancelAnimationFrame(particleFrame);
     particleFrame = null;
     particleContext.clearRect(0, 0, particleWidth, particleHeight);
-    if (particleEnabled && !motionPreference.matches && !document.hidden) {
+    if (particleEnabled && !motionPreference.matches && !document.hidden && particles.length) {
       lastPaint = performance.now();
       particleFrame = requestAnimationFrame(drawParticles);
     }
@@ -212,7 +231,7 @@
   });
   window.addEventListener('pointermove', event => { pointer.positionX = event.clientX; pointer.positionY = event.clientY; }, { passive: true });
   document.addEventListener('pointerleave', () => { pointer.positionX = -1000; pointer.positionY = -1000; });
-  window.addEventListener('resize', resizeParticles, { passive: true });
+  window.addEventListener('resize', () => { resizeParticles(); syncParticles(); }, { passive: true });
   document.addEventListener('visibilitychange', syncParticles);
   motionPreference.addEventListener('change', syncParticles);
   resizeParticles();

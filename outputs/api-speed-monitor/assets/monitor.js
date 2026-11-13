@@ -1,5 +1,6 @@
 const STORAGE_KEY = "ai-api-speed-monitor-v2";
-const MODEL_COLORS = ["#18865b", "#2f8f7c", "#5f8f4f", "#b58a3c", "#3b7ea1", "#8a63b8", "#c2645a", "#4b8d74", "#6f7b8a", "#95663f"];
+const MODEL_COLORS = ["#4c7b99", "#be7858", "#829578", "#9b83b0", "#ba9852", "#589692", "#c5747c", "#7b90b7", "#6c7d88", "#98725a"];
+const MODEL_PICKER_LIMIT = 200;
 
 const state = {
   history: [],
@@ -17,6 +18,14 @@ const state = {
   checksAbort: null,
   progress: 0,
   progressRunId: 0,
+  modelCandidates: [],
+  modelMatches: [],
+  modelSourceKey: "",
+  modelFetchId: 0,
+  modelFetchAbort: null,
+  modelFetching: false,
+  modelPickerSignature: null,
+  checkChoicesSignature: null,
   demo: false
 };
 
@@ -29,7 +38,8 @@ const REQUIRED_IDS = [
 ];
 const OPTIONAL_IDS = [
   "protocol", "transport", "modelCount", "runProgress", "nextRun", "sampleCount", "outputPreview",
-  "testProgress", "toast", "emptyState", "protocolHint"
+  "testProgress", "toast", "emptyState", "protocolHint", "modelSearch", "modelPickerList",
+  "selectVisibleModels", "clearSelectedModels", "modelEditorToggle", "modelEditor", "modelListSummary"
 ];
 
 function readElements() {
@@ -126,6 +136,7 @@ function saveState() {
   const config = {
     baseUrl: el.baseUrl.value,
     models: el.models.value,
+    modelCandidates: state.modelCandidates,
     interval: el.interval.value,
     maxTokens: el.maxTokens.value,
     effort: el.effort.value,
@@ -149,9 +160,13 @@ function isValidMetric(value) {
   return value == null || (typeof value === "number" && Number.isFinite(value) && value >= 0);
 }
 
+function isValidTimestamp(value) {
+  return typeof value === "number" && value >= 0 && Number.isFinite(new Date(value).getTime());
+}
+
 function isValidHistoryRow(row) {
   if (!row || typeof row.model !== "string" || !row.model.trim() || row.model.trim().length > 200) return false;
-  if (typeof row.at !== "number" || !Number.isFinite(row.at) || row.at < 0) return false;
+  if (!isValidTimestamp(row.at)) return false;
   if (typeof row.ok !== "boolean") return false;
   return isValidMetric(row.ttft) && isValidMetric(row.total) && isValidMetric(row.outputTokens) && isValidMetric(row.tokensPerSecond);
 }
@@ -176,7 +191,7 @@ function sanitizeHistoryRow(row) {
 
 function isValidCheckRecord(record) {
   if (!record || typeof record.model !== "string" || !record.model.trim() || record.model.trim().length > 200) return false;
-  if (typeof record.at !== "number" || !Number.isFinite(record.at) || record.at < 0) return false;
+  if (!isValidTimestamp(record.at)) return false;
   if (typeof record.elapsed !== "number" || !Number.isFinite(record.elapsed) || record.elapsed < 0) return false;
   if (!Array.isArray(record.results)) return false;
   return record.results.every(item => {
@@ -210,6 +225,8 @@ function loadState() {
   const config = saved && typeof saved.config === "object" && saved.config ? saved.config : {};
   el.baseUrl.value = typeof config.baseUrl === "string" ? config.baseUrl : "";
   el.models.value = typeof config.models === "string" ? config.models : "";
+  state.modelCandidates = normalizeModelCandidates(config.modelCandidates);
+  state.modelSourceKey = modelSourceKey(el.baseUrl.value);
   el.interval.value = Number.isFinite(Number(config.interval)) && Number(config.interval) > 0 ? config.interval : 30;
   el.maxTokens.value = Number.isFinite(Number(config.maxTokens)) && Number(config.maxTokens) >= 8 ? config.maxTokens : 256;
   el.effort.value = ["", "none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"].includes(config.effort) ? config.effort : "";
@@ -371,45 +388,141 @@ async function fetchModels() {
     return;
   }
   if (!validateConnection()) return;
+  syncModelSource();
+  state.modelFetchAbort?.abort();
+  const fetchId = ++state.modelFetchId;
+  const sourceKey = state.modelSourceKey;
   const controller = new AbortController();
+  state.modelFetchAbort = controller;
+  state.modelFetching = true;
   const timer = window.setTimeout(() => controller.abort(), 45000);
   el.fetchModels.disabled = true;
   try {
     const response = await requestJson("models", null, controller.signal);
     const body = await parseJsonResponse(response);
+    if (fetchId !== state.modelFetchId || sourceKey !== modelSourceKey(el.baseUrl.value)) return;
     if (!response.ok) throw new Error(apiError(body, response));
-    const models = (Array.isArray(body.data) ? body.data : []).map(item => item?.id).filter(value => typeof value === "string" && value.trim() && value.length <= 200);
+    const models = normalizeModelCandidates((Array.isArray(body.data) ? body.data : []).map(item => item?.id));
     if (!models.length) throw new Error("模型列表为空");
-    el.models.value = [...new Set(models)].join("\n");
     renderModelChoices(models);
     appendLog(`拉取模型成功：${models.length} 个`, "ok");
     saveState();
   } catch (error) {
+    if (fetchId !== state.modelFetchId || sourceKey !== modelSourceKey(el.baseUrl.value)) return;
     appendLog(`拉取模型失败：${error.name === "AbortError" ? "请求超时" : error.message}`, "bad");
   } finally {
     window.clearTimeout(timer);
-    el.fetchModels.disabled = false;
+    if (fetchId === state.modelFetchId) {
+      state.modelFetching = false;
+      state.modelFetchAbort = null;
+      el.fetchModels.disabled = modelPickerLocked();
+    }
   }
+}
+
+function modelSourceKey(value) {
+  try { return new URL(normalizeBase(value)).href.replace(/\/$/, ""); }
+  catch { return normalizeBase(value); }
+}
+
+function syncModelSource() {
+  const sourceKey = modelSourceKey(el.baseUrl.value);
+  if (state.modelSourceKey === sourceKey) return;
+  state.modelSourceKey = sourceKey;
+  state.modelFetchId += 1;
+  state.modelFetchAbort?.abort();
+  state.modelFetchAbort = null;
+  state.modelFetching = false;
+  state.modelCandidates = [];
+  state.modelMatches = [];
+  el.models.value = "";
+  el.checkModelInput.value = "";
+  el.checkModelSelect.value = "";
+  if (el.modelSearch) el.modelSearch.value = "";
+  renderModelChoices();
+  el.fetchModels.disabled = modelPickerLocked();
+}
+
+function selectedModels() {
+  return [...new Set(el.models.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean))];
+}
+
+function normalizeModelCandidates(models) {
+  if (!Array.isArray(models)) return [];
+  return [...new Set(models.filter(model => typeof model === "string").map(model => model.trim()).filter(model => model && model.length <= 200))];
+}
+
+function modelProviderLabel(model) {
+  if (/claude/i.test(model)) return "Claude · 按 ID 分类";
+  if (/gemini/i.test(model)) return "Gemini · 按 ID 分类";
+  if (/(?:^|[\s/_.-])(?:gpt|chatgpt|openai|o[134])(?:[\d\s/_.-]|$)/i.test(model)) return "OpenAI · 按 ID 分类";
+  return "其他 · 按 ID 分类";
+}
+
+function modelPickerLocked() {
+  return state.running || state.checksRunning || Boolean(state.timer);
+}
+
+function updateModelPickerControls() {
+  const locked = modelPickerLocked();
+  if (el.selectVisibleModels) el.selectVisibleModels.disabled = locked || !state.modelMatches.length;
+  if (el.clearSelectedModels) el.clearSelectedModels.disabled = locked || !selectedModels().length;
+  if (el.modelPickerList) el.modelPickerList.querySelectorAll('input[type="checkbox"]').forEach(input => { input.disabled = locked; });
 }
 
 function renderModelChoices(models) {
-  const choices = models || el.models.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
-  const selected = el.checkModelInput.value.trim() || el.checkModelSelect.value;
-  el.checkModelSelect.innerHTML = '<option value="">从模型列表选择</option>' + choices.map(model => {
-    const safe = escapeHtml(model);
-    return `<option value="${safe}">${safe}</option>`;
-  }).join("");
-  if (choices.includes(selected)) {
-    el.checkModelInput.value = selected;
-    el.checkModelSelect.value = selected;
+  const selected = selectedModels();
+  const selectedSet = new Set(selected);
+  state.modelCandidates = normalizeModelCandidates([...(Array.isArray(models) ? models : state.modelCandidates), ...selected]);
+  const query = el.modelSearch ? el.modelSearch.value.trim().toLowerCase() : "";
+  state.modelMatches = state.modelCandidates.filter(model => model.toLowerCase().includes(query));
+  const visible = state.modelMatches.slice(0, MODEL_PICKER_LIMIT);
+  if (el.modelPickerList) {
+    const signature = JSON.stringify([visible, state.modelMatches.length, state.modelCandidates.length]);
+    if (signature !== state.modelPickerSignature) {
+      state.modelPickerSignature = signature;
+      el.modelPickerList.innerHTML = visible.length ? visible.map(model => {
+        const safe = escapeHtml(model);
+        const checked = selectedSet.has(model);
+        return `<label class="model-choice${checked ? " selected" : ""}"><input type="checkbox" value="${safe}"${checked ? " checked" : ""}><span class="model-choice-name" title="${safe}">${safe}</span><small class="model-choice-provider">${modelProviderLabel(model)}</small></label>`;
+      }).join("") + (state.modelMatches.length > MODEL_PICKER_LIMIT ? `<div class="model-picker-empty"><svg class="icon" aria-hidden="true"><use href="#i-paw"></use></svg><span>仅显示前 ${MODEL_PICKER_LIMIT} 项，共匹配 ${state.modelMatches.length} 项，请输入关键词缩小范围；「选中匹配项」会选择全部匹配模型。</span></div>` : "")
+        : `<div class="model-picker-empty"><span class="empty-paw"><svg class="icon" aria-hidden="true"><use href="#i-paw"></use></svg></span><div><h3>${state.modelCandidates.length ? "没有找到这个模型。" : "先认识一下你的模型。"}</h3><p>${state.modelCandidates.length ? "试试其他关键词，或手动输入完整 ID。" : "填写连接信息并拉取模型，或手动输入模型 ID。"}</p></div></div>`;
+    }
+    el.modelPickerList.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.checked = selectedSet.has(input.value);
+      input.closest(".model-choice").classList.toggle("selected", input.checked);
+    });
+  }
+  const checkSelected = el.checkModelInput.value.trim() || el.checkModelSelect.value;
+  const checkChoices = state.modelCandidates.slice(0, MODEL_PICKER_LIMIT);
+  if (state.modelCandidates.includes(checkSelected) && !checkChoices.includes(checkSelected)) checkChoices.push(checkSelected);
+  const checkSignature = JSON.stringify([checkChoices, state.modelCandidates.length > MODEL_PICKER_LIMIT]);
+  if (checkSignature !== state.checkChoicesSignature) {
+    state.checkChoicesSignature = checkSignature;
+    el.checkModelSelect.innerHTML = '<option value="">从模型列表选择</option>' + checkChoices.map(model => {
+      const safe = escapeHtml(model);
+      return `<option value="${safe}" title="${safe}">${safe}</option>`;
+    }).join("") + (state.modelCandidates.length > MODEL_PICKER_LIMIT ? '<option disabled>更多模型请手工输入完整 ID</option>' : "");
+  }
+  if (checkChoices.includes(checkSelected)) {
+    el.checkModelInput.value = checkSelected;
+    el.checkModelSelect.value = checkSelected;
   }
   updateModelCount();
+  updateModelPickerControls();
 }
 
 function updateModelCount() {
-  if (!el.modelCount) return;
-  const models = [...new Set(el.models.value.split(/\r?\n/).map(value => value.trim()).filter(Boolean))];
-  el.modelCount.textContent = `${models.length} 个`;
+  const count = selectedModels().length;
+  if (el.modelCount) el.modelCount.textContent = `${count} 个`;
+  if (el.modelListSummary) el.modelListSummary.textContent = `匹配 ${state.modelMatches.length} / 候选 ${state.modelCandidates.length} · 已选 ${count}`;
+}
+
+function setSelectedModels(models) {
+  if (modelPickerLocked()) return;
+  el.models.value = [...new Set(models)].join("\n");
+  renderModelChoices();
+  saveState();
 }
 
 function resolveProtocol(model) {
@@ -985,19 +1098,24 @@ function renderStats(stats) {
 
 function renderTable(stats) {
   if (!stats.length) {
-    el.modelRows.innerHTML = '<tr><td colspan="8" class="muted">暂无数据</td></tr>';
+    el.modelRows.innerHTML = '<tr><td colspan="8" class="muted">还没有测试记录。选择模型，点击「立即测试」开始。</td></tr>';
     return;
   }
   el.modelRows.innerHTML = stats.map(item => {
     const latest = item.latest;
-    const status = latest?.ok ? '<span class="ok">正常</span>' : '<span class="bad">失败</span>';
+    const status = latest?.ok ? '<span class="model-status ok">正常</span>' : '<span class="model-status bad">失败</span>';
     const rate = item.successRate == null ? "--" : `${(item.successRate * 100).toFixed(1)}%`;
     const rateClass = item.successRate >= 0.95 ? "ok" : item.successRate >= 0.8 ? "warn" : "bad";
     const title = latest?.error ? ` title="${escapeHtml(latest.error)}"` : "";
+    const model = escapeHtml(item.model);
+    const testedAt = latest ? new Date(latest.at) : null;
+    const fullTime = testedAt ? testedAt.toLocaleString("zh-CN", { hour12: false }) : "";
+    const time = testedAt ? testedAt.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }) : "--";
+    const isoTime = testedAt && Number.isFinite(testedAt.getTime()) ? testedAt.toISOString() : "";
     return `<tr${title}>
-      <td class="model">${escapeHtml(item.model)}</td><td>${status}</td><td>${formatSeconds(latest?.ttft)}</td><td>${formatSeconds(latest?.total)}</td>
-      <td>${latest?.outputTokens ?? "--"}</td><td>${latest?.tokensPerSecond ? latest.tokensPerSecond.toFixed(1) : "--"}</td>
-      <td class="${rateClass}">${rate}</td><td class="muted">${latest ? escapeHtml(new Date(latest.at).toLocaleString("zh-CN", { hour12: false })) : "--"}</td>
+      <td class="model" data-label="模型" title="${model}">${model}</td><td data-label="状态">${status}</td><td data-label="首字延迟">${formatSeconds(latest?.ttft)}</td><td data-label="总耗时">${formatSeconds(latest?.total)}</td>
+      <td data-label="输出 tokens">${escapeHtml(latest?.outputTokens ?? "--")}</td><td data-label="tokens/s">${latest?.tokensPerSecond ? latest.tokensPerSecond.toFixed(1) : "--"}</td>
+      <td class="${rateClass}" data-label="成功率">${rate}</td><td class="muted model-time" data-label="最后测试" title="${escapeHtml(fullTime)}"><time${isoTime ? ` datetime="${isoTime}"` : ""}>${escapeHtml(time)}</time></td>
     </tr>`;
   }).join("");
 }
@@ -1009,20 +1127,23 @@ function drawChart(canvas, stats, field) {
   canvas.width = Math.round(rect.width * displayRatio);
   canvas.height = Math.round(rect.height * displayRatio);
   const context = canvas.getContext("2d");
+  if (!context) return;
   context.setTransform(displayRatio, 0, 0, displayRatio, 0, 0);
   context.clearRect(0, 0, rect.width, rect.height);
   const styles = getComputedStyle(document.documentElement);
-  const gridColor = styles.getPropertyValue("--chart-grid").trim() || "rgba(24, 39, 32, 0.12)";
-  const textColor = styles.getPropertyValue("--chart-text").trim() || "#5c6f65";
-  const padding = { top: 14, right: 16, bottom: 30, left: 52 };
+  const gridColor = styles.getPropertyValue("--chart-grid").trim() || "rgba(39, 77, 57, 0.16)";
+  const textColor = styles.getPropertyValue("--chart-text").trim() || "#365b45";
+  const padding = { top: 20, right: 24, bottom: 38, left: 68 };
   const width = rect.width - padding.left - padding.right;
   const height = rect.height - padding.top - padding.bottom;
+  if (width <= 0 || height <= 0) return;
   const points = stats.flatMap(item => item.rows.filter(row => row.ok && Number.isFinite(row[field])).map(row => ({ row, color: item.color })));
   context.strokeStyle = gridColor;
   context.fillStyle = textColor;
-  context.font = "10px system-ui";
+  context.font = "12px system-ui";
   context.lineWidth = 1;
   if (!points.length) {
+    context.font = "13px system-ui";
     context.textAlign = "center";
     context.fillText("暂无成功数据", rect.width / 2, rect.height / 2);
     return;
@@ -1033,7 +1154,7 @@ function drawChart(canvas, stats, field) {
   const maxX = Math.max(...times);
   const rangeX = Math.max(maxX - minX, 1);
   const maxValue = Math.max(...values) * 1.1 || 1;
-  const yTicks = rect.height <= 120 ? 3 : 4;
+  const yTicks = height < 100 ? 2 : height < 160 ? 3 : 4;
   for (let index = 0; index <= yTicks; index += 1) {
     const positionY = padding.top + height - height * index / yTicks;
     const value = maxValue * index / yTicks;
@@ -1045,12 +1166,14 @@ function drawChart(canvas, stats, field) {
     const axisLabel = field === "ttft"
       ? `${value.toFixed(value < 1 ? 2 : 1)}s`
       : value.toFixed(1);
-    context.fillText(axisLabel, padding.left - 6, positionY + 4);
+    context.fillText(axisLabel, padding.left - 10, positionY + 4);
   }
   context.textAlign = "left";
-  context.fillText(new Date(minX).toLocaleTimeString("zh-CN", { hour12: false }), padding.left, rect.height - 8);
-  context.textAlign = "right";
-  context.fillText(new Date(maxX).toLocaleTimeString("zh-CN", { hour12: false }), padding.left + width, rect.height - 8);
+  context.fillText(new Date(minX).toLocaleTimeString("zh-CN", { hour12: false }), padding.left, rect.height - 12);
+  if (minX !== maxX && width >= 140) {
+    context.textAlign = "right";
+    context.fillText(new Date(maxX).toLocaleTimeString("zh-CN", { hour12: false }), padding.left + width, rect.height - 12);
+  }
   for (const item of stats) {
     const rows = item.rows.filter(row => row.ok && Number.isFinite(row[field])).sort((left, right) => left.at - right.at);
     if (!rows.length) continue;
@@ -1130,10 +1253,13 @@ function renderGlobalStatus() {
   el.start.disabled = locked;
   el.runOnce.disabled = busy;
   el.runChecks.disabled = busy;
-  el.fetchModels.disabled = locked;
+  el.fetchModels.disabled = locked || state.modelFetching;
   el.import.disabled = locked;
   el.clear.disabled = locked;
-  document.querySelectorAll(".configuration input, .configuration select, .configuration textarea").forEach(element => { element.disabled = locked; });
+  ["baseUrl", "apiKey", "rememberKey", "protocol", "transport", "models", "interval", "maxTokens", "effort", "timeout", "prompt", "checkModelInput", "checkModelSelect"].forEach(id => {
+    if (el[id]) el[id].disabled = locked;
+  });
+  updateModelPickerControls();
   el.stop.disabled = !locked;
   notifyState();
 }
@@ -1166,6 +1292,7 @@ function importData(event) {
     if (state.demo) state.demoHistory = history;
     else { state.history = history; state.demoHistory = []; }
     if (!state.demo && typeof imported.config?.baseUrl === "string") el.baseUrl.value = imported.config.baseUrl;
+    if (!state.demo) syncModelSource();
     if (!state.demo && typeof imported.config?.models === "string") el.models.value = imported.config.models;
     renderModelChoices();
     saveState();
@@ -1250,17 +1377,39 @@ function bindEvents() {
   ["baseUrl", "models", "interval", "maxTokens", "effort", "timeout", "prompt", "protocol", "transport"].forEach(id => {
     if (!el[id]) return;
     el[id].addEventListener("change", () => {
+      if (id === "baseUrl") syncModelSource();
       saveState();
       if (id === "models") renderModelChoices();
       updateProtocolHint();
     });
   });
+  el.baseUrl.addEventListener("input", () => { syncModelSource(); notifyState(); });
   el.apiKey.addEventListener("change", saveState);
   el.rememberKey.addEventListener("change", () => {
     if (!el.rememberKey.checked) forgetSavedKey();
     saveState();
   });
   el.models.addEventListener("input", () => { renderModelChoices(); notifyState(); });
+  if (el.modelSearch) el.modelSearch.addEventListener("input", () => renderModelChoices());
+  if (el.modelPickerList) el.modelPickerList.addEventListener("change", event => {
+    const input = event.target;
+    if (!input.matches('input[type="checkbox"]') || !state.modelCandidates.includes(input.value)) return;
+    if (modelPickerLocked()) { renderModelChoices(); return; }
+    const models = selectedModels().filter(model => model !== input.value);
+    if (input.checked) models.push(input.value);
+    setSelectedModels(models);
+  });
+  if (el.selectVisibleModels) el.selectVisibleModels.onclick = () => setSelectedModels([...selectedModels(), ...state.modelMatches]);
+  if (el.clearSelectedModels) el.clearSelectedModels.onclick = () => setSelectedModels([]);
+  if (el.modelEditorToggle && el.modelEditor) {
+    el.modelEditorToggle.setAttribute("aria-controls", "modelEditor");
+    el.modelEditorToggle.setAttribute("aria-expanded", String(!el.modelEditor.hidden));
+    el.modelEditorToggle.onclick = () => {
+      el.modelEditor.hidden = !el.modelEditor.hidden;
+      el.modelEditorToggle.setAttribute("aria-expanded", String(!el.modelEditor.hidden));
+      if (!el.modelEditor.hidden) el.models.focus();
+    };
+  }
 
   const resizeObserver = new ResizeObserver(() => renderCharts(modelStats()));
   resizeObserver.observe(el.ttftChart);

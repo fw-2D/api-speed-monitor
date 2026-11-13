@@ -1,6 +1,6 @@
 # 青测 · AI API 测速与稳定性
 
-一个浅绿磨砂风格的网页工具。每位使用者填入自己的 API 地址和密钥，即可拉取模型、检测接口兼容性、查看流式首字延迟、输出速度与周期监控结果。
+一个奶油杏、雾蓝与陶橘配色、猫狗插画陪伴的网页观测工具。每位使用者填入自己的 API 地址和密钥，即可搜索勾选模型、检测接口兼容性、查看流式首字延迟、输出速度与周期监控结果。
 
 **[在线使用青测](https://qingce-api-monitor.netlify.app/)** · 无需注册，填写自己的 API 地址和密钥即可使用。
 
@@ -11,6 +11,7 @@
 | `outputs/api-speed-monitor/index.html` | 单页布局与表单 |
 | `outputs/api-speed-monitor/assets/styles.css` | 浅色界面与响应式布局 |
 | `outputs/api-speed-monitor/assets/ui.js` | 面板过渡、粒子与示例预览 |
+| `outputs/api-speed-monitor/assets/forest-companions.svg` | 原创猫咪与柴犬矢量插画 |
 | `outputs/api-speed-monitor/assets/monitor.js` | 模型检测、测速与本机历史 |
 | `outputs/api-speed-monitor/netlify/functions/relay.mjs` | 公网 API 的同源流式转发 |
 | `netlify.toml` | Netlify 发布目录、函数路由与响应头 |
@@ -23,5 +24,7 @@
 首次部署后，在项目概览点击 **Make public**，访问范围选择 **Public**；否则生产网页可能要求访问者先登录。本站的生产网址已设为公开，部署预览仍可保持团队私有。
 
 完整配置、指标口径和隐私说明见 [使用文档](outputs/api-speed-monitor/README.md)。
+
+新版不再把所有内容硬塞进固定高度：连接与模型选择并排，参数按需展开，结果表独占整行；字号与间距优先保障可读性，手机端使用逐模型卡片。拉取模型只获得候选清单，不会自动全选或发起模型调用。
 
 默认使用 `/v1/responses`。网站转发会经过本网站服务器处理使用者填入的密钥，不持久保存密钥；浏览器直连则需要目标中转站允许跨域。周期监控需要保持网页打开，真实测试会消耗使用者自己的 API 额度。
